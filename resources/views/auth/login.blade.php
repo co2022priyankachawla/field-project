@@ -11,6 +11,12 @@
             </p>
         </div>
 
+        @if (session('status'))
+            <div class="mb-4 font-medium text-sm text-green-600 bg-green-50 p-4 rounded-lg">
+                {{ session('status') }}
+            </div>
+        @endif
+
         <form action="{{ route('login') }}" method="POST" class="space-y-6">
             @csrf
             
@@ -25,7 +31,7 @@
             <div class="space-y-1">
                 <div class="flex items-center justify-between">
                     <label class="block text-sm font-semibold text-slate-700">Password</label>
-                    <a href="#" class="text-sm font-semibold text-primary hover:text-primary-dark transition-colors">Forgot password?</a>
+                    <a href="{{ route('password.request') }}" class="text-sm font-semibold text-primary hover:text-primary-dark transition-colors">Forgot password?</a>
                 </div>
                 <x-input 
                     name="password" 
@@ -42,6 +48,7 @@
                         name="remember"
                         id="remember"
                         class="peer sr-only"
+                        {{ old('remember') ? 'checked' : '' }}
                     />
                     <div class="h-6 w-6 rounded-lg border-2 border-slate-200 transition-all duration-200 peer-checked:border-primary peer-checked:bg-primary group-hover:border-primary/50">
                         <svg class="h-5 w-5 text-white opacity-0 transition-opacity duration-200 peer-checked:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">

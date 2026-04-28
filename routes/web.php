@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\AssignmentController;
+use App\Http\Controllers\PasswordResetController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -17,6 +18,12 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Password Reset Routes
+Route::get('/forgot-password', [PasswordResetController::class, 'create'])->name('password.request')->middleware('guest');
+Route::post('/forgot-password', [PasswordResetController::class, 'store'])->name('password.email')->middleware('guest');
+Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset')->middleware('guest');
+Route::post('/reset-password', [PasswordResetController::class, 'update'])->name('password.store')->middleware('guest');
 
 // Dashboard Routes
 Route::middleware(['auth'])->group(function () {
