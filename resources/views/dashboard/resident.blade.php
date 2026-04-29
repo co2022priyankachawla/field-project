@@ -41,6 +41,7 @@
                         <th class="py-4 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Location</th>
                         <th class="py-4 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Area Detail</th>
                         <th class="py-4 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                        <th class="py-4 px-2 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,10 +78,27 @@
                                     {{ ucfirst(str_replace('_', ' ', $complaint->status)) }}
                                 </x-badge>
                             </td>
+                            <td class="py-5 px-2 text-right">
+                                @if(in_array($complaint->status, ['resolved', 'completed']))
+                                    @if($complaint->feedback)
+                                        <div class="flex items-center justify-end gap-1 text-amber-400" title="{{ $complaint->feedback->comment }}">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <svg class="h-4 w-4 {{ $i <= $complaint->feedback->rating ? 'fill-current' : 'text-slate-200' }}" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                            @endfor
+                                        </div>
+                                    @else
+                                        <button onclick="openFeedbackModal({{ $complaint->id }})" class="text-sm font-semibold text-primary hover:text-primary-dark transition-colors">
+                                            Rate Service
+                                        </button>
+                                    @endif
+                                @else
+                                    <span class="text-xs text-slate-400">-</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="py-20 text-center">
+                            <td colspan="6" class="py-20 text-center">
                                 <div class="flex flex-col items-center">
                                     <div class="h-20 w-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
                                         <svg class="h-10 w-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -98,4 +116,113 @@
             </table>
         </div>
     </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-slate-900/50 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 opacity-0 transition-all duration-300" id="feedbackModalContent">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900">Rate Service</h3>
+                <button onclick="closeFeedbackModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <form action="{{ route('feedback.submit') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="complaint_id" id="feedback_complaint_id">
+                    
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Rating</label>
+                        <div class="flex items-center gap-2" id="star-rating">
+                            @for($i = 1; $i <= 5; $i++)
+                                <button type="button" data-rating="{{ $i }}" class="star-btn text-slate-200 hover:text-amber-400 focus:outline-none transition-colors">
+                                    <svg class="h-8 w-8 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                                </button>
+                            @endfor
+                        </div>
+                        <input type="hidden" name="rating" id="rating_input" required>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Comment (Optional)</label>
+                        <textarea name="comment" rows="3" class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none" placeholder="Share your experience..."></textarea>
+                    </div>
+
+                    <div class="flex justify-end gap-3">
+                        <x-button type="button" variant="outline" onclick="closeFeedbackModal()">Cancel</x-button>
+                        <x-button type="submit" variant="primary">Submit Feedback</x-button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openFeedbackModal(complaintId) {
+            document.getElementById('feedback_complaint_id').value = complaintId;
+            const modal = document.getElementById('feedbackModal');
+            const modalContent = document.getElementById('feedbackModalContent');
+            
+            modal.classList.remove('hidden');
+            // Small delay for the CSS transition to work
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            const modalContent = document.getElementById('feedbackModalContent');
+            
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                // Reset form
+                document.getElementById('rating_input').value = '';
+                document.querySelectorAll('.star-btn').forEach(btn => btn.classList.replace('text-amber-400', 'text-slate-200'));
+                document.querySelector('textarea[name="comment"]').value = '';
+            }, 300);
+        }
+
+        // Star rating logic
+        document.querySelectorAll('.star-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const rating = this.getAttribute('data-rating');
+                document.getElementById('rating_input').value = rating;
+                
+                document.querySelectorAll('.star-btn').forEach(b => {
+                    if (b.getAttribute('data-rating') <= rating) {
+                        b.classList.replace('text-slate-200', 'text-amber-400');
+                    } else {
+                        b.classList.replace('text-amber-400', 'text-slate-200');
+                    }
+                });
+            });
+
+            // Optional: Hover effects
+            btn.addEventListener('mouseenter', function() {
+                const rating = this.getAttribute('data-rating');
+                if (!document.getElementById('rating_input').value) {
+                    document.querySelectorAll('.star-btn').forEach(b => {
+                        if (b.getAttribute('data-rating') <= rating) {
+                            b.classList.add('text-amber-300');
+                            b.classList.remove('text-slate-200');
+                        }
+                    });
+                }
+            });
+
+            btn.addEventListener('mouseleave', function() {
+                if (!document.getElementById('rating_input').value) {
+                    document.querySelectorAll('.star-btn').forEach(b => {
+                        b.classList.add('text-slate-200');
+                        b.classList.remove('text-amber-300');
+                    });
+                }
+            });
+        });
+    </script>
 </x-app-layout>

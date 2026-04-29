@@ -19,7 +19,7 @@ class DashboardController extends Controller
         $stats = $this->getStats();
 
         if ($user->isResident()) {
-            $complaints = Complaint::where('resident_id', $user->id)->latest()->get();
+            $complaints = Complaint::with('feedback')->where('resident_id', $user->id)->latest()->get();
             $stats['resident_total'] = $complaints->count();
             $stats['resident_pending'] = $complaints->where('status', 'pending')->count();
             $stats['resident_completed'] = $complaints->where('status', 'resolved')->count() + $complaints->where('status', 'completed')->count();
@@ -33,7 +33,7 @@ class DashboardController extends Controller
         }
 
         if ($user->isStaff()) {
-            $assignments = Assignment::with('complaint')->where('staff_id', $user->id)->latest()->get();
+            $assignments = Assignment::with(['complaint', 'complaint.feedback'])->where('staff_id', $user->id)->latest()->get();
             $stats['staff_total'] = $assignments->count();
             $stats['staff_completed'] = $assignments->where('status', 'completed')->count();
             return view('dashboard.staff', compact('stats', 'assignments'));
